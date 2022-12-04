@@ -1,9 +1,11 @@
+package io.conductor.demos;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 /**
- * Unit test for simple App.
+ * Unit test for simple io.conductor.demos.App.
  */
 public class AppTest extends TestCase {
 
