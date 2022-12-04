@@ -26,17 +26,19 @@ public class ProducerDemo {
 
         for (int i = 0; i < 10; i++) {
             ProducerRecord<String, String> producerRecord =
-                    new ProducerRecord<>("demo_java", "hello world " + i);
+                    new ProducerRecord<>("demo_java", "id_" + i,"hello world " + i);
 
             producer.send(producerRecord, ((recordMetadata, e) -> {
                 if (e == null) {
                     log.info("""
                             Received new metadata.
                             Topic: %s
+                            Key: %s
                             Partition: %s
                             Offset: %s
                             Timestamp: %s""".formatted(
                             recordMetadata.topic(),
+                            producerRecord.key(),
                             recordMetadata.partition(),
                             recordMetadata.offset(),
                             recordMetadata.timestamp()));
