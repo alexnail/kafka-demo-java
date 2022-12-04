@@ -24,25 +24,33 @@ public class ProducerDemo {
 
         KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
 
-        ProducerRecord<String, String> producerRecord =
-                new ProducerRecord<>("demo_java", "hello world");
+        for (int i = 0; i < 10; i++) {
+            ProducerRecord<String, String> producerRecord =
+                    new ProducerRecord<>("demo_java", "hello world " + i);
 
-        producer.send(producerRecord, ((recordMetadata, e) -> {
-            if (e == null) {
-                log.info("""
-                        Received new metadata.
-                        Topic: %s
-                        Partition: %s
-                        Offset: %s
-                        Timestamp: %s""".formatted(
-                        recordMetadata.topic(),
-                        recordMetadata.partition(),
-                        recordMetadata.offset(),
-                        recordMetadata.timestamp())) ;
-            } else {
-                log.error("Error while producing", e);
+            producer.send(producerRecord, ((recordMetadata, e) -> {
+                if (e == null) {
+                    log.info("""
+                            Received new metadata.
+                            Topic: %s
+                            Partition: %s
+                            Offset: %s
+                            Timestamp: %s""".formatted(
+                            recordMetadata.topic(),
+                            recordMetadata.partition(),
+                            recordMetadata.offset(),
+                            recordMetadata.timestamp()));
+                } else {
+                    log.error("Error while producing", e);
+                }
+            })); //async
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        })); //async
+        }
         producer.flush(); //sync
         producer.close();
     }
