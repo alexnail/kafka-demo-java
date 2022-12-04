@@ -6,6 +6,7 @@ import java.util.Properties;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,18 +28,37 @@ public class ConsumerDemo {
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(properties)) {
-            consumer.subscribe(List.of("demo_java"));
+            Thread mainThread = Thread.currentThread();
 
-            while (true) {
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                log.info("Detected a shutdown, let's exit by calling consumer.wakeup()...");
+                consumer.wakeup();
+                try {
+                    mainThread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }));
 
-                records.forEach(r -> {
-                    log.info("Key: %s, Value: %s".formatted(r.key(), r.value()));
-                    log.info("Partition: %s, Offset: %s".formatted(r.partition(), r.offset()));
-                });
+            try {
+                consumer.subscribe(List.of("demo_java"));
+                while (true) {
+                    ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+
+                    records.forEach(r -> {
+                        log.info("Key: %s, Value: %s".formatted(r.key(), r.value()));
+                        log.info("Partition: %s, Offset: %s".formatted(r.partition(), r.offset()));
+                    });
+                }
+            } catch (WakeupException e) {
+                log.info("Wake up exception!");
+            } catch (Exception e) {
+                log.error("Unexpected exception", e);
+            } finally {
+                consumer.close();
+                log.info("The consumer's been gracefully closed.");
             }
         }
-
     }
 
 }
