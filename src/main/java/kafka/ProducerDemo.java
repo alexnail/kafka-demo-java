@@ -27,7 +27,22 @@ public class ProducerDemo {
         ProducerRecord<String, String> producerRecord =
                 new ProducerRecord<>("demo_java", "hello world");
 
-        producer.send(producerRecord); //async
+        producer.send(producerRecord, ((recordMetadata, e) -> {
+            if (e == null) {
+                log.info("""
+                        Received new metadata.
+                        Topic: %s
+                        Partition: %s
+                        Offset: %s
+                        Timestamp: %s""".formatted(
+                        recordMetadata.topic(),
+                        recordMetadata.partition(),
+                        recordMetadata.offset(),
+                        recordMetadata.timestamp())) ;
+            } else {
+                log.error("Error while producing", e);
+            }
+        })); //async
         producer.flush(); //sync
         producer.close();
     }
